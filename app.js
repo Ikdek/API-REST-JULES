@@ -58,13 +58,9 @@ app.get("/products", (req, res) => {
 
 app.post("/add", (req, res) => {
   const body = req.body || {};
-  const name = body.name;
+  const name = body.name || null;
   const description = body.description || null;
   const category = body.category || null;
-
-  if (!name) {
-    return res.status(400).json({ error: "name is required" });
-  }
 
   const query = db.prepare("INSERT INTO products (name, description, category) VALUES (?, ?, ?)");
   const result = query.run(name, description, category);
@@ -93,7 +89,7 @@ app.put("/products/:id", (req, res) => {
   }
 
   const body = req.body || {};
-  const name = body.name;
+  const name = body.name || null;
   const description = body.description || null;
   const category = body.category || null;
 
@@ -172,8 +168,6 @@ app.delete("/products/:id", (req, res) => {
 
   res.status(204).send();
 });
-
-
 
 
 app.listen(port, () => {
