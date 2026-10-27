@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("./db");
+const { hashPassword, verifyPassword, generateToken, authenticate } = require("./auth");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,50 @@ function isValidId(id) {
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+
+/*
+ █████╗ ██╗   ██╗████████╗██╗  ██╗
+██╔══██╗██║   ██║╚══██╔══╝██║  ██║
+███████║██║   ██║   ██║   ███████║
+██╔══██║██║   ██║   ██║   ██╔══██║
+██║  ██║╚██████╔╝   ██║   ██║  ██║
+╚═╝  ╚═╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝
+*/
+
+app.post("/register", (req, res) => {
+  const body = req.body || {};
+  const { username, password } = body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Nom d'utilisateur et mot de passe requis" });
+  }
+
+  const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(username);
+  if (existing) {
+    return res.status(409).json({ error: "Ce nom d'utilisateur est déjà pris" });
+  }
+
+  const query = db.prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+  const result = query.run(username, hashPassword(password));
+
+  res.status(201).json({ id: result.lastInsertRowid, username });
+});
+
+app.post("/login", (req, res) => {
+  const body = req.body || {};
+  const { username, password } = body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Nom d'utilisateur et mot de passe requis" });
+  }
+
+  const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  if (!user || !verifyPassword(password, user.password)) {
+    return res.status(401).json({ error: "Identifiants invalides" });
+  }
+
+  res.json({ token: generateToken(user), expiresIn: 300 });
 });
 
 /*
@@ -56,7 +101,7 @@ app.get("/products", (req, res) => {
 ╚═╝      ╚═════╝ ╚══════╝   ╚═╝       ╚═╝  ╚═╝╚═════╝ ╚═════╝                                                            
 */
 
-app.post("/add", (req, res) => {
+app.post("/add", authenticate, (req, res) => {
   const body = req.body || {};
   const name = body.name || null;
   const description = body.description || null;
@@ -78,7 +123,7 @@ app.post("/add", (req, res) => {
 ╚═╝      ╚═════╝    ╚═╝       ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝  ╚═════╝   ╚═╝   ╚══════╝╚═╝    ╚═╝╚═════╝ 
 */                                                                                                          
 
-app.put("/products/:id", (req, res) => {
+app.put("/products/:id", authenticate, (req, res) => {
   const id = Number(req.params.id);
   if (!isValidId(id)) {
     return res.status(400).json({ error: "Veuillez rentrer un ID de produit valide !" });
@@ -108,7 +153,7 @@ app.put("/products/:id", (req, res) => {
 ╚═╝     ╚═╝  ╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝  ╚═════╝   ╚═╝   ╚══════╝╚═╝    ╚═╝╚═════╝ 
 */                                                                                                                         
 
-app.patch("/products/:id", (req, res) => {
+app.patch("/products/:id", authenticate, (req, res) => {
   const id = Number(req.params.id);
   if (!isValidId(id)) {
     return res.status(400).json({ error: "Veuillez rentrer un ID de produit valide !" });
@@ -153,7 +198,7 @@ app.patch("/products/:id", (req, res) => {
 ╚═════╝ ╚══════╝╚══════╝╚══════╝   ╚═╝   ╚══════╝    ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝  ╚═════╝  ╚═════╝   ╚═╝   ╚══════╝╚═╝    ╚═╝╚═════╝ 
 */
 
-app.delete("/products/:id", (req, res) => {
+app.delete("/products/:id", authenticate, (req, res) => {
   const id = Number(req.params.id);
   if (!isValidId(id)) {
     return res.status(400).json({ error: "Veuillez rentrer un ID de produit valide !" });

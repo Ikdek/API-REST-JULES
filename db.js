@@ -1,11 +1,6 @@
 const { DatabaseSync } = require('node:sqlite')
-const fs = require('node:fs')
-const path = require('node:path')
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'data', 'database.sqlite')
-fs.mkdirSync(path.dirname(dbPath), { recursive: true })
-
-const db = new DatabaseSync(dbPath)
+const db = new DatabaseSync(process.env.DB_PATH || 'database.sqlite')
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS products (
@@ -13,6 +8,12 @@ db.exec(`
     name TEXT NOT NULL,
     description TEXT,
     category TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
   )
 `)
 
