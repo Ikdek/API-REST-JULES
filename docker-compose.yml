@@ -7,6 +7,8 @@ services:
       - sqlite-data:/app/data
     environment:
       - JWT_SECRET=${JWT_SECRET:-cocinelle}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
     restart: unless-stopped
 
 volumes:

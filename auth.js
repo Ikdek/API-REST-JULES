@@ -22,7 +22,7 @@ function verifyPassword(password, stored) {
 }
 
 function generateToken(user) {
-  return jwt.sign({ sub: user.id, username: user.username }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ sub: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 function authenticate(req, res, next) {
